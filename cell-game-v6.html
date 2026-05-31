@@ -1,0 +1,2228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>细胞进化6.0 · 荣耀竞技场</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);
+  overflow:hidden;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  height:100vh;width:100vw;user-select:none;-webkit-user-select:none;color:#e6e6e6
+}
+canvas{display:block;position:fixed;top:0;left:0}
+.glass{
+  background:rgba(255,255,255,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.15);border-radius:20px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.1)
+}
+.icon-btn{
+  background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;
+  padding:8px;cursor:pointer;transition:all .2s ease;display:flex;align-items:center;justify-content:center;
+  width:40px;height:40px;font-size:18px;color:#e6e6e6
+}
+.icon-btn:hover{background:rgba(255,255,255,0.2);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.icon-btn.active{background:#4cc9f0;color:white;border-color:#4cc9f0}
+.icon-btn.danger{background:rgba(240,128,128,.15);border-color:#F08080;color:#F08080}
+.icon-btn.danger:hover{background:#F08080;color:white}
+.icon-btn.success{background:rgba(76,201,240,.15);border-color:#4cc9f0;color:#4cc9f0}
+.icon-btn.success:hover{background:#4cc9f0;color:white}
+.icon-btn.primary{background:rgba(156,39,176,.15);border-color:#9c27b0;color:#9c27b0}
+.icon-btn.primary:hover{background:#9c27b0;color:white}
+
+/* 待机页面 */
+.idle-screen{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:1000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 50%,#1a1a2e 0%,#0d1117 100%);
+  transition:opacity .5s ease;
+}
+.idle-screen.hidden{opacity:0;pointer-events:none}
+.idle-title{
+  font-size:3.5rem;font-weight:800;background:linear-gradient(90deg,#4cc9f0,#9c27b0);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1rem;
+  text-shadow:0 0 30px rgba(76,201,240,0.3);
+}
+.idle-subtitle{
+  font-size:1.2rem;color:rgba(230,230,230,0.7);margin-bottom:3rem;max-width:600px;text-align:center;
+  line-height:1.6;
+}
+.start-btn{
+  background:linear-gradient(90deg,#4cc9f0,#9c27b0);color:white;border:none;
+  padding:16px 48px;border-radius:50px;font-size:1.3rem;font-weight:600;
+  cursor:pointer;transition:all .3s ease;box-shadow:0 8px 32px rgba(76,201,240,0.3);
+  margin-bottom:2rem;
+}
+.start-btn:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(76,201,240,0.4);}
+
+/* 设置面板 */
+.setup-panel{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;
+  width:90%;max-width:800px;max-height:90vh;overflow-y:auto;padding:2rem;
+  background:rgba(26,26,46,0.95);backdrop-filter:blur(20px);border-radius:24px;
+  border:1px solid rgba(76,201,240,0.2);box-shadow:0 20px 60px rgba(0,0,0,0.4);
+}
+.setup-panel.hidden{display:none}
+.setup-title{font-size:1.8rem;color:#4cc9f0;margin-bottom:1.5rem;text-align:center}
+.setup-section{margin-bottom:2rem}
+.section-title{font-size:1.2rem;color:#9c27b0;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(76,201,240,0.2)}
+.setup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem}
+.setup-group{margin-bottom:1rem}
+.setup-label{display:block;font-size:0.9rem;color:rgba(230,230,230,0.8);margin-bottom:0.5rem}
+.setup-input{
+  width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(76,201,240,0.3);
+  background:rgba(0,0,0,0.3);color:#e6e6e6;font-size:1rem;
+}
+.setup-input:focus{outline:none;border-color:#4cc9f0;box-shadow:0 0 0 2px rgba(76,201,240,0.2)}
+.setup-slider{width:100%;height:6px;background:rgba(76,201,240,0.1);border-radius:3px;outline:none}
+.setup-slider::-webkit-slider-thumb{width:20px;height:20px;border-radius:50%;background:#4cc9f0;cursor:pointer;box-shadow:0 0 10px rgba(76,201,240,0.5)}
+.setup-value{font-size:0.9rem;color:#4cc9f0;text-align:right;margin-top:0.25rem}
+.setup-btn{
+  width:100%;padding:12px;border-radius:10px;background:linear-gradient(90deg,#4cc9f0,#9c27b0);
+  color:white;border:none;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s ease;
+}
+.setup-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(76,201,240,0.3)}
+.setup-btn.secondary{background:rgba(76,201,240,0.1);color:#4cc9f0}
+.setup-btn.secondary:hover{background:rgba(76,201,240,0.2)}
+
+/* 细胞配置器 */
+.cell-configurator{margin-top:1.5rem}
+.config-cell{background:rgba(0,0,0,0.2);border-radius:12px;padding:1rem;margin-bottom:1rem}
+.config-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem}
+.cell-name-input{flex:1;margin-right:1rem}
+.attr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem}
+.attr-item{display:flex;align-items:center;gap:0.5rem}
+.attr-value{min-width:40px;text-align:center;font-weight:600;color:#4cc9f0}
+
+/* 游戏内UI */
+.top-controls{
+  position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:100;
+  display:flex;align-items:center;gap:10px;padding:10px 16px;
+  background:rgba(26,26,46,0.8);backdrop-filter:blur(12px);border-radius:20px;
+  border:1px solid rgba(76,201,240,0.2);box-shadow:0 8px 32px rgba(0,0,0,0.3)
+}
+.control-group{display:flex;align-items:center;gap:6px}
+.control-label{font-size:11px;color:rgba(230,230,230,0.6);font-weight:500;white-space:nowrap}
+.control-value{font-size:13px;color:#e6e6e6;font-weight:600;font-variant-numeric:tabular-nums;min-width:36px}
+.right-panel{
+  position:fixed;top:80px;right:20px;width:420px;z-index:99;transition:transform .3s ease,opacity .3s ease
+}
+.right-panel.collapsed{transform:translateX(440px);opacity:0;pointer-events:none}
+.panel-toggle{position:fixed;top:90px;z-index:101;transition:right .3s ease;right:450px}
+.panel-toggle.collapsed{right:20px}
+.tab-system{display:flex;gap:3px;padding:6px;background:rgba(0,0,0,0.3);border-radius:14px;margin-bottom:12px}
+.tab{
+  padding:6px 12px;border-radius:10px;cursor:pointer;transition:all .2s ease;font-size:12px;
+  font-weight:500;color:rgba(230,230,230,0.6);flex:1;text-align:center
+}
+.tab:hover{background:rgba(76,201,240,0.1);color:#4cc9f0}
+.tab.active{background:rgba(76,201,240,0.2);color:#4cc9f0;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.tab-content{display:none;padding:12px;max-height:calc(100vh - 180px);overflow-y:auto}
+.tab-content.active{display:block}
+.tab-title{font-size:14px;font-weight:600;color:#4cc9f0;margin-bottom:12px}
+
+/* 能力卡片 */
+.ability-category{margin-bottom:16px}
+.category-title{font-size:12px;font-weight:600;color:#4cc9f0;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(76,201,240,0.2)}
+.ability-grid{display:grid;grid-template-columns:1fr;gap:8px;max-height:200px;overflow-y:auto;padding-right:4px}
+.ability-card{background:rgba(0,0,0,0.3);border-radius:10px;padding:8px 10px;border:1px solid rgba(76,201,240,0.1)}
+.ability-card.new{border:2px solid #4cc9f0;background:rgba(76,201,240,0.08)}
+.ability-card.ai-mutated{border:2px solid #9c27b0;background:rgba(156,39,176,0.08)}
+.ability-card.honor{border:2px solid #ffd700;background:rgba(255,215,0,0.08)}
+.ability-name{font-size:11px;font-weight:600;color:#e6e6e6;margin-bottom:2px;display:flex;align-items:center;gap:4px}
+.ability-badge{font-size:8px;padding:1px 4px;border-radius:3px}
+.badge-new{background:#4cc9f0;color:#000}.badge-ai{background:#9c27b0;color:#fff}.badge-honor{background:#ffd700;color:#000}
+.ability-effect{font-size:10px;color:rgba(230,230,230,0.7);margin-bottom:2px}
+.ability-detail{font-size:9px;color:rgba(230,230,230,0.5);margin-top:2px}
+
+/* 统计卡片 */
+.cell-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+.stat-card{background:rgba(0,0,0,0.3);border-radius:10px;padding:10px}
+.stat-label{font-size:10px;color:rgba(230,230,230,0.5);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.stat-value{font-size:16px;font-weight:600;color:#e6e6e6;font-variant-numeric:tabular-nums}
+.stat-progress{height:3px;background:rgba(230,230,230,0.1);border-radius:2px;margin-top:5px;overflow:hidden}
+.stat-progress-fill{height:100%;border-radius:2px}
+.health-fill{background:#4cc9f0}.energy-fill{background:#9c27b0}.xp-fill{background:#ffd700}
+
+/* 属性网格 */
+.attribute-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0}
+.attr-card{background:rgba(0,0,0,0.2);border-radius:8px;padding:6px;text-align:center}
+.attr-label{font-size:9px;color:rgba(230,230,230,0.5);margin-bottom:2px}
+.attr-value{font-size:12px;font-weight:600;color:#e6e6e6}
+
+/* 事件日志 */
+.event-log{max-height:200px;overflow-y:auto;font-size:11px;line-height:1.6}
+.event-entry{margin-bottom:4px;padding:4px 8px;background:rgba(0,0,0,0.2);border-radius:6px;display:flex;align-items:flex-start;gap:6px}
+.event-time{color:rgba(230,230,230,0.4);font-size:10px;flex-shrink:0}
+.event-icon{flex-shrink:0}
+.event-msg{color:#e6e6e6}
+.event-msg.predation{color:#ff6b6b}
+.event-msg.levelup{color:#4cc9f0}
+.event-msg.honor{color:#ffd700}
+.event-msg.death{color:#888}
+
+/* 尸体效果 */
+.corpse{position:absolute;border-radius:50%;background:rgba(100,100,100,0.3);border:2px dashed rgba(200,200,200,0.5)}
+
+/* 滚动条 */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:rgba(0,0,0,0.1);border-radius:2px}
+::-webkit-scrollbar-thumb{background:rgba(76,201,240,0.3);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:rgba(76,201,240,0.5)}
+
+.hidden{display:none}
+.fps-display{position:fixed;bottom:10px;right:10px;font-size:10px;color:rgba(230,230,230,0.4);z-index:300}
+</style>
+</head>
+<body>
+
+<!-- 待机页面 -->
+<div class="idle-screen" id="idleScreen">
+  <div class="idle-title">🧬 细胞进化6.0</div>
+  <div class="idle-subtitle">荣耀竞技场 · 在微观世界中培育最强细胞，挑战荣耀殿堂，创造不朽传奇</div>
+  <button class="start-btn" id="startIdleBtn">开始荣耀竞技</button>
+  <div style="color:rgba(230,230,230,0.5);font-size:0.9rem;margin-top:1rem">
+    已有荣耀存档: <span id="honorCount">0</span> 个传奇细胞
+  </div>
+</div>
+
+<!-- 设置面板 -->
+<div class="setup-panel glass hidden" id="setupPanel">
+  <div class="setup-title">⚙ 竞技场配置</div>
+  
+  <div class="setup-section">
+    <div class="section-title">📊 基础设置</div>
+    <div class="setup-grid">
+      <div class="setup-group">
+        <label class="setup-label">初始细胞数量 (1-10)</label>
+        <input type="range" class="setup-slider" id="initialCellsSlider" min="1" max="10" value="3">
+        <div class="setup-value" id="initialCellsValue">3</div>
+      </div>
+      <div class="setup-group">
+        <label class="setup-label">最大种群数 (10-100)</label>
+        <input type="range" class="setup-slider" id="maxPopulationSlider" min="10" max="100" value="40">
+        <div class="setup-value" id="maxPopulationValue">40</div>
+      </div>
+      <div class="setup-group">
+        <label class="setup-label">营养块数量 (20-100)</label>
+        <input type="range" class="setup-slider" id="nutrientCountSlider" min="20" max="100" value="50">
+        <div class="setup-value" id="nutrientCountValue">50</div>
+      </div>
+      <div class="setup-group">
+        <label class="setup-label">植物数量 (5-20)</label>
+        <input type="range" class="setup-slider" id="plantCountSlider" min="5" max="20" value="8">
+        <div class="setup-value" id="plantCountValue">8</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="setup-section">
+    <div class="section-title">🎮 游戏机制</div>
+    <div class="setup-grid">
+      <div class="setup-group">
+        <label class="setup-label">经验获取倍率 (0.5-3.0)</label>
+        <input type="range" class="setup-slider" id="xpMultiplierSlider" min="0.5" max="3.0" step="0.1" value="1.0">
+        <div class="setup-value" id="xpMultiplierValue">1.0x</div>
+      </div>
+      <div class="setup-group">
+        <label class="setup-label">尸体存在时间 (1-10秒)</label>
+        <input type="range" class="setup-slider" id="corpseDurationSlider" min="1" max="10" value="3">
+        <div class="setup-value" id="corpseDurationValue">3秒</div>
+      </div>
+      <div class="setup-group">
+        <label class="setup-label">同族攻击惩罚 (0-100%)</label>
+        <input type="range" class="setup-slider" id="friendlyFirePenaltySlider" min="0" max="100" value="50">
+        <div class="setup-value" id="friendlyFirePenaltyValue">50%</div>
+      </div>
+      <div class="setup-group">
+        <label class="setup-label">能力继承概率 (1-30%)</label>
+        <input type="range" class="setup-slider" id="abilityInheritSlider" min="1" max="30" value="10">
+        <div class="setup-value" id="abilityInheritValue">10%</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="setup-section">
+    <div class="section-title">🧬 细胞配置</div>
+    <div class="cell-configurator" id="cellConfigurator">
+      <!-- 动态生成的细胞配置项 -->
+    </div>
+    <button class="setup-btn secondary" id="addCellBtn">+ 添加新细胞</button>
+  </div>
+  
+  <div class="setup-section">
+    <div class="section-title">🏆 荣耀能力库</div>
+    <div id="honorAbilitiesPreview" style="
+      font-size:0.9rem;color:rgba(230,230,230,0.7);
+      padding:12px;background:rgba(0,0,0,0.2);border-radius:10px;
+      max-height:120px;overflow-y:auto;margin-bottom:1rem
+    ">
+      <div id="honorAbilitiesList">暂无荣耀能力</div>
+    </div>
+  </div>
+  
+  <div style="display:flex;gap:1rem;margin-top:2rem">
+    <button class="setup-btn secondary" id="backToIdleBtn">返回</button>
+    <button class="setup-btn" id="startGameBtn">开始竞技</button>
+  </div>
+</div>
+
+<!-- 游戏内UI -->
+<div class="glass top-controls hidden" id="topControls">
+  <div class="control-group">
+    <button class="icon-btn success" id="playBtn" title="▶ 开始">▶</button>
+    <button class="icon-btn" id="pauseBtn" title="⏸ 暂停">⏸</button>
+    <button class="icon-btn" id="stepBtn" title="⏭ 单步">⏭</button>
+  </div>
+  <div class="control-group">
+    <button class="icon-btn" id="speedDownBtn" title="减速">◀</button>
+    <span class="control-value" id="gameSpeed">1.0x</span>
+    <button class="icon-btn" id="speedUpBtn" title="加速">▶</button>
+  </div>
+  <div class="control-group">
+    <button class="icon-btn" id="nameToggleBtn" title="👁 名字">👁</button>
+    <button class="icon-btn" id="gridToggleBtn" title="网格">#</button>
+    <button class="icon-btn" id="rangeToggleBtn" title="📡 范围">📡</button>
+    <span class="control-label">🧫</span><span class="control-value" id="totalCells">0</span>
+    <span class="control-label">⭐</span><span class="control-value" id="highestLevel">0</span>
+  </div>
+  <button class="icon-btn danger" id="resetBtn" title="↺ 重置">↺</button>
+</div>
+
+<button class="icon-btn primary panel-toggle hidden" id="panelToggleBtn" title="折叠面板">◀</button>
+
+<div class="right-panel glass hidden" id="rightPanel">
+  <div class="tab-system">
+    <div class="tab active" data-tab="info">🧬</div>
+    <div class="tab" data-tab="stats">📊</div>
+    <div class="tab" data-tab="abilities">📚</div>
+    <div class="tab" data-tab="honor">🏆</div>
+    <div class="tab" data-tab="events">📋</div>
+  </div>
+  <div class="tab-content active" id="infoTab">
+    <div class="tab-title">🧬 选中细胞</div>
+    <div class="cell-stats">
+      <div class="stat-card"><div class="stat-label">名称</div><div class="stat-value" id="cellName">无</div></div>
+      <div class="stat-card"><div class="stat-label">等级</div><div class="stat-value" id="cellLevel">-</div><div class="stat-progress"><div class="stat-progress-fill xp-fill" id="cellXpBar" style="width:0"></div></div></div>
+      <div class="stat-card"><div class="stat-label">健康</div><div class="stat-value" id="cellHealth">-</div><div class="stat-progress"><div class="stat-progress-fill health-fill" id="cellHealthBar" style="width:0"></div></div></div>
+      <div class="stat-card"><div class="stat-label">能量</div><div class="stat-value" id="cellEnergy">-</div><div class="stat-progress"><div class="stat-progress-fill energy-fill" id="cellEnergyBar" style="width:0"></div></div></div>
+      <div class="stat-card"><div class="stat-label">年龄</div><div class="stat-value" id="cellAge">-</div></div>
+      <div class="stat-card"><div class="stat-label">能力点</div><div class="stat-value" id="cellSkillPoints">-</div></div>
+    </div>
+    <div class="tab-title" style="margin-top:12px">⚔️ 多维属性</div>
+    <div class="attribute-grid">
+      <div class="attr-card"><div class="attr-label">攻击</div><div class="attr-value" id="cellAttack">0</div></div>
+      <div class="attr-card"><div class="attr-label">防御</div><div class="attr-value" id="cellDefense">0</div></div>
+      <div class="attr-card"><div class="attr-label">速度</div><div class="attr-value" id="cellSpeed">0</div></div>
+      <div class="attr-card"><div class="attr-label">感知</div><div class="attr-value" id="cellPerception">0</div></div>
+      <div class="attr-card"><div class="attr-label">恢复</div><div class="attr-value" id="cellRecovery">0</div></div>
+      <div class="attr-card"><div class="attr-label">社交</div><div class="attr-value" id="cellSocial">0</div></div>
+    </div>
+    <div class="tab-title" style="margin-top:12px">📊 状态</div>
+    <div id="cellStatus" style="font-size:12px;color:rgba(230,230,230,0.6)">—</div>
+    <div class="tab-title" style="margin-top:12px">✨ 特殊能力</div>
+    <div id="cellSpecialAbilities" style="font-size:12px">—</div>
+  </div>
+  <div class="tab-content" id="statsTab">
+    <div class="tab-title">📊 全局统计</div>
+    <div class="cell-stats">
+      <div class="stat-card"><div class="stat-label">细胞总数</div><div class="stat-value" id="totalCellsStat">0</div></div>
+      <div class="stat-card"><div class="stat-label">最高等级</div><div class="stat-value" id="highestLevelStat">0</div></div>
+      <div class="stat-card"><div class="stat-label">总吞噬数</div><div class="stat-value" id="totalConsumptions">0</div></div>
+      <div class="stat-card"><div class="stat-label">总死亡数</div><div class="stat-value" id="totalDeaths">0</div></div>
+      <div class="stat-card"><div class="stat-label">总升级数</div><div class="stat-value" id="totalLevelUps">0</div></div>
+      <div class="stat-card"><div class="stat-label">荣耀点数</div><div class="stat-value" id="honorPoints">0</div></div>
+    </div>
+    <div class="tab-title" style="margin-top:12px">🏆 本局强者</div>
+    <div id="eliteMembers" style="font-size:12px">—</div>
+  </div>
+  <div class="tab-content" id="abilitiesTab">
+    <div class="ability-category"><div class="category-title">📦 基础能力库</div><div class="ability-grid" id="baseAbilities"></div></div>
+    <div class="ability-category"><div class="category-title" style="color:#4cc9f0">✨ 本局新能力</div><div class="ability-grid" id="newAbilities"></div></div>
+    <div class="ability-category"><div class="category-title" style="color:#9c27b0">🤖 AI变异能力</div><div class="ability-grid" id="aiAbilities"></div></div>
+  </div>
+  <div class="tab-content" id="honorTab">
+    <div class="tab-title">🏆 荣耀殿堂</div>
+    <div id="honorHall" style="font-size:12px">暂无荣耀细胞</div>
+  </div>
+  <div class="tab-content" id="eventsTab">
+    <div class="tab-title">📋 事件日志</div>
+    <div class="event-log" id="eventLog"></div>
+  </div>
+</div>
+
+<canvas id="canvas"></canvas>
+<div class="fps-display hidden" id="fpsDisplay">FPS: --</div>
+
+<script>
+(function() {
+  'use strict';
+  const canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+  const gridCanvas = document.createElement('canvas');
+  const gridCtx = gridCanvas.getContext('2d');
+  let gridDirty = true;
+  
+  // UI元素
+  const idleScreen = document.getElementById('idleScreen');
+  const startIdleBtn = document.getElementById('startIdleBtn');
+  const setupPanel = document.getElementById('setupPanel');
+  const backToIdleBtn = document.getElementById('backToIdleBtn');
+  const startGameBtn = document.getElementById('startGameBtn');
+  const cellConfigurator = document.getElementById('cellConfigurator');
+  const addCellBtn = document.getElementById('addCellBtn');
+  const honorAbilitiesList = document.getElementById('honorAbilitiesList');
+  const honorCount = document.getElementById('honorCount');
+  
+  const topControls = document.getElementById('topControls');
+  const playBtn = document.getElementById('playBtn'), pauseBtn = document.getElementById('pauseBtn');
+  const stepBtn = document.getElementById('stepBtn'), nameToggleBtn = document.getElementById('nameToggleBtn');
+  const gridToggleBtn = document.getElementById('gridToggleBtn'), rangeToggleBtn = document.getElementById('rangeToggleBtn');
+  const speedUpBtn = document.getElementById('speedUpBtn'), speedDownBtn = document.getElementById('speedDownBtn'), resetBtn = document.getElementById('resetBtn');
+  const panelToggleBtn = document.getElementById('panelToggleBtn'), rightPanel = document.getElementById('rightPanel');
+  const totalCellsEl = document.getElementById('totalCells'), highestLevelEl = document.getElementById('highestLevel');
+  const gameSpeedEl = document.getElementById('gameSpeed'), tabs = document.querySelectorAll('.tab');
+  const tabContents = document.querySelectorAll('.tab-content');
+  const cellNameEl = document.getElementById('cellName'), cellLevelEl = document.getElementById('cellLevel');
+  const cellHealthEl = document.getElementById('cellHealth'), cellHealthBar = document.getElementById('cellHealthBar');
+  const cellEnergyEl = document.getElementById('cellEnergy'), cellEnergyBar = document.getElementById('cellEnergyBar');
+  const cellAgeEl = document.getElementById('cellAge'), cellSkillPointsEl = document.getElementById('cellSkillPoints');
+  const cellAttackEl = document.getElementById('cellAttack'), cellDefenseEl = document.getElementById('cellDefense');
+  const cellSpeedEl = document.getElementById('cellSpeed'), cellPerceptionEl = document.getElementById('cellPerception');
+  const cellRecoveryEl = document.getElementById('cellRecovery'), cellSocialEl = document.getElementById('cellSocial');
+  const cellStatusEl = document.getElementById('cellStatus'), cellSpecialAbilitiesEl = document.getElementById('cellSpecialAbilities');
+  const cellXpBar = document.getElementById('cellXpBar');
+  const baseAbilitiesEl = document.getElementById('baseAbilities'), newAbilitiesEl = document.getElementById('newAbilities');
+  const aiAbilitiesEl = document.getElementById('aiAbilities'), honorHallEl = document.getElementById('honorHall');
+  const totalCellsStatEl = document.getElementById('totalCellsStat'), highestLevelStatEl = document.getElementById('highestLevelStat');
+  const totalConsumptionsEl = document.getElementById('totalConsumptions'), totalDeathsEl = document.getElementById('totalDeaths');
+  const totalLevelUpsEl = document.getElementById('totalLevelUps'), honorPointsEl = document.getElementById('honorPoints');
+  const eliteMembersEl = document.getElementById('eliteMembers'), eventLogEl = document.getElementById('eventLog');
+  const fpsDisplay = document.getElementById('fpsDisplay');
+  
+  // 设置滑块
+  const initialCellsSlider = document.getElementById('initialCellsSlider'), initialCellsValue = document.getElementById('initialCellsValue');
+  const maxPopulationSlider = document.getElementById('maxPopulationSlider'), maxPopulationValue = document.getElementById('maxPopulationValue');
+  const nutrientCountSlider = document.getElementById('nutrientCountSlider'), nutrientCountValue = document.getElementById('nutrientCountValue');
+  const plantCountSlider = document.getElementById('plantCountSlider'), plantCountValue = document.getElementById('plantCountValue');
+  const xpMultiplierSlider = document.getElementById('xpMultiplierSlider'), xpMultiplierValue = document.getElementById('xpMultiplierValue');
+  const corpseDurationSlider = document.getElementById('corpseDurationSlider'), corpseDurationValue = document.getElementById('corpseDurationValue');
+  const friendlyFirePenaltySlider = document.getElementById('friendlyFirePenaltySlider'), friendlyFirePenaltyValue = document.getElementById('friendlyFirePenaltyValue');
+  const abilityInheritSlider = document.getElementById('abilityInheritSlider'), abilityInheritValue = document.getElementById('abilityInheritValue');
+
+  let W,H,gameRunning=false,gamePaused=false,speedMultiplier=1.0,selectedCell=null,lastTime=0,frameId=null;
+  let showNames=true,showGrid=true,showRange=false,panelCollapsed=false,gameFrame=0;
+  const eventLog=[],MAX_EVENTS=200;
+  let fpsFrameCount=0,fpsLastTime=0,fpsCurrent=0;
+
+  // 荣耀存档系统
+  const HONOR_STORAGE_KEY = 'cell_evolution_honor';
+  let honorSystem = {
+    hallOfFame: [], // {name, level, abilities, stats, timestamp}
+    honorAbilities: [], // 从荣耀细胞中提取的独特能力
+    points: 0,
+    load() {
+      try {
+        const saved = localStorage.getItem(HONOR_STORAGE_KEY);
+        if(saved){
+          const data = JSON.parse(saved);
+          this.hallOfFame = data.hallOfFame || [];
+          this.honorAbilities = data.honorAbilities || [];
+          this.points = data.points || 0;
+        }
+      } catch(e){}
+      this.updateUI();
+    },
+    save() {
+      try {
+        localStorage.setItem(HONOR_STORAGE_KEY, JSON.stringify({
+          hallOfFame: this.hallOfFame,
+          honorAbilities: this.honorAbilities,
+          points: this.points
+        }));
+      } catch(e){}
+    },
+    addToHallOfFame(cell) {
+      const entry = {
+        name: cell.name,
+        level: cell.level,
+        abilities: cell.specialAbilities.map(a => ({name:a.name,effect:a.effect})),
+        stats: {
+          attack: Math.round(cell.attributes.attack),
+          defense: Math.round(cell.attributes.defense),
+          speed: Math.round(cell.attributes.speed*100),
+          age: cell.age,
+          generation: cell.generation
+        },
+        timestamp: Date.now(),
+        color: cell.color
+      };
+      this.hallOfFame.unshift(entry);
+      if(this.hallOfFame.length > 20) this.hallOfFame.pop();
+      
+      // 提取独特能力到荣耀库
+      cell.specialAbilities.forEach(ability => {
+        if(!this.honorAbilities.some(a => a.name === ability.name)){
+          this.honorAbilities.push({
+            name: ability.name,
+            effect: ability.effect,
+            detail: ability.detail,
+            type: ability.type,
+            icon: ability.icon,
+            source: entry.name
+          });
+        }
+      });
+      
+      this.points += cell.level * 10;
+      this.save();
+      this.updateUI();
+      addEvent('🏆', `${cell.name} 进入荣耀殿堂！`, 'honor');
+    },
+    updateUI() {
+      honorCount.textContent = this.hallOfFame.length;
+      honorPointsEl.textContent = this.points;
+      
+      // 更新荣耀能力预览
+      if(this.honorAbilities.length === 0){
+        honorAbilitiesList.innerHTML = '<div style="color:rgba(230,230,230,0.5)">暂无荣耀能力</div>';
+      }else{
+        honorAbilitiesList.innerHTML = this.honorAbilities.slice(0,5).map(a => 
+          `<div style="margin-bottom:4px">
+            <span style="color:#ffd700">${a.icon||'⭐'}</span>
+            <span style="color:#e6e6e6">${a.name}</span>
+            <span style="color:rgba(230,230,230,0.6);font-size:0.8rem"> - ${a.effect}</span>
+          </div>`
+        ).join('');
+        if(this.honorAbilities.length > 5){
+          honorAbilitiesList.innerHTML += `<div style="color:rgba(230,230,230,0.5);font-size:0.8rem">+${this.honorAbilities.length-5} 更多...</div>`;
+        }
+      }
+      
+      // 更新荣耀殿堂显示
+      if(honorHallEl){
+        if(this.hallOfFame.length === 0){
+          honorHallEl.innerHTML = '<div style="color:rgba(230,230,230,0.5);text-align:center;padding:20px">暂无荣耀细胞</div>';
+        }else{
+          honorHallEl.innerHTML = this.hallOfFame.slice(0,10).map(entry => `
+            <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:10px;margin-bottom:8px;border-left:4px solid ${entry.color}">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <div style="font-weight:600;color:#e6e6e6">${entry.name}</div>
+                <div style="font-size:0.9rem;color:#ffd700">Lv${entry.level}</div>
+              </div>
+              <div style="font-size:0.8rem;color:rgba(230,230,230,0.7)">
+                攻击${entry.stats.attack} 防御${entry.stats.defense} 速度${entry.stats.speed}
+              </div>
+              <div style="font-size:0.75rem;color:rgba(230,230,230,0.5);margin-top:2px">
+                ${new Date(entry.timestamp).toLocaleDateString()}
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+    }
+  };
+  
+  // 能力系统
+  const ABILITY_SYSTEM = {
+    baseAbilities: [
+      {name:'光合作用',effect:'在植物旁恢复能量+30%',detail:'植物范围内能量恢复速度提升30%',type:'metabolic',category:'base',icon:'☀️'},
+      {name:'快速移动',effect:'移动速度+25%',detail:'基础移动速度提升25%',type:'physical',category:'base',icon:'⚡'},
+      {name:'坚固外壳',effect:'防御+20%',detail:'受到的所有伤害减少20%',type:'defense',category:'base',icon:'🛡️'},
+      {name:'高效分裂',effect:'繁衍能量-25%',detail:'繁殖所需能量减少25%',type:'reproduction',category:'base',icon:'🔬'},
+      {name:'营养感知',effect:'感知范围+40%',detail:'发现营养和植物的范围扩大40%',type:'metabolic',category:'base',icon:'📡'},
+      {name:'毒性分泌',effect:'攻击附带中毒',detail:'攻击时使目标持续损失健康',type:'defense',category:'base',icon:'☠️'},
+      {name:'共生倾向',effect:'共生效果+50%',detail:'共生恢复效果提升50%',type:'social',category:'base',icon:'🤝'},
+      {name:'伪装色',effect:'保护期+50%',detail:'新生保护时间延长50%',type:'defense',category:'base',icon:'🎨'}
+    ],
+    newAbilities: [],
+    aiAbilities: [],
+    honorAbilities: [],
+    dirty: false,
+    
+    generateAIMutation(ba){
+      const tpl=[{prefix:'超级',m:1.5,icon:'🌟',detail:'效果大幅增强'},{prefix:'量子',txt:'概率触发',icon:'🔮',detail:'有概率触发额外效果'},{prefix:'纳米',txt:'持续生效',icon:'🔬',detail:'效果持续存在'},{prefix:'生物',txt:'与环境互动',icon:'🧬',detail:'与环境产生特殊互动'},{prefix:'能量',txt:'消耗能量',icon:'⚡',detail:'需要消耗能量激活'},{suffix:'增强版',m:1.3,icon:'💪',detail:'效果增强30%'},{suffix:'优化版',txt:'效率提升',icon:'🎯',detail:'效率大幅提升'},{suffix:'变异版',txt:'随机效果',icon:'🌀',detail:'效果随机变化'}];
+      const t=tpl[Math.floor(Math.random()*tpl.length)],nm=t.prefix?t.prefix+ba.name:ba.name+t.suffix;
+      let ef=ba.effect;if(t.m)ef=ef.replace(/(\d+)%/g,(_,n)=>Math.round(parseInt(n)*t.m)+'%');else if(t.txt)ef+=' ('+t.txt+')';
+      const ab={name:nm,effect:ef,detail:t.detail||ba.detail,type:ba.type,category:'ai',icon:t.icon||ba.icon};
+      this.aiAbilities.push(ab);this.dirty=true;return ab;
+    },
+    
+    getRandomAbility(){
+      const pool=[...this.baseAbilities,...this.newAbilities,...this.aiAbilities,...this.honorAbilities];
+      return pool.length?pool[Math.floor(Math.random()*pool.length)]:this.baseAbilities[0];
+    },
+    
+    createNewAbility(){
+      const th=['生态','进化','适应','生存','竞争','合作','智慧','力量'],ef=['能量效率','环境适应','社交影响','防御机制','移动策略','繁衍优化','攻击强化','恢复增强'];
+      const types=['physical','metabolic','social','defense','reproduction'],icons=['🌱','🧬','🤝','🛡️','⚡','🔬','🎯','🌀','💥','❤️'];
+      const boost=15+Math.floor(Math.random()*25);
+      const ab={name:th[Math.floor(Math.random()*th.length)]+'适应',
+        effect:ef[Math.floor(Math.random()*ef.length)]+'+'+boost+'%',
+        detail:getAbilityDetail(ef[Math.floor(Math.random()*ef.length)],boost),
+        type:types[Math.floor(Math.random()*types.length)],category:'new',
+        icon:icons[Math.floor(Math.random()*icons.length)]};
+      this.newAbilities.push(ab);this.dirty=true;return ab;
+    },
+    
+    updateUI(){
+      if(!this.dirty)return;
+      this.dirty=false;
+      baseAbilitiesEl.innerHTML='';this.baseAbilities.forEach(a=>baseAbilitiesEl.appendChild(createAbilityCard(a)));
+      newAbilitiesEl.innerHTML='';this.newAbilities.forEach(a=>{const el=createAbilityCard(a);el.classList.add('new');newAbilitiesEl.appendChild(el)});
+      aiAbilitiesEl.innerHTML='';this.aiAbilities.forEach(a=>{const el=createAbilityCard(a);el.classList.add('ai-mutated');aiAbilitiesEl.appendChild(el)});
+    }
+  };
+  
+  function getAbilityDetail(type,boost){
+    const details={
+      '能量效率':`能量消耗减少${boost}%，行动更持久`,
+      '环境适应':`环境适应力提升${boost}%，恢复速度加快`,
+      '社交影响':`社交效果提升${boost}%，更容易建立关系`,
+      '防御机制':`防御力提升${boost}%，受到伤害减少`,
+      '移动策略':`移动速度提升${boost}%，探索更高效`,
+      '繁衍优化':`繁殖效率提升${boost}%，后代更强壮`,
+      '攻击强化':`攻击力提升${boost}%，捕食更有效`,
+      '恢复增强':`恢复速度提升${boost}%，生存能力更强`
+    };
+    return details[type]||`效果提升${boost}%`;
+  }
+  
+  function createAbilityCard(a){
+    const d=document.createElement('div'),tn={physical:'物理',metabolic:'代谢',social:'社交',defense:'防御',reproduction:'繁衍'};
+    d.className='ability-card';
+    if(a.category==='honor')d.classList.add('honor');
+    const b=a.category==='new'?'<span class="ability-badge badge-new">新</span>':
+      a.category==='ai'?'<span class="ability-badge badge-ai">AI</span>':
+      a.category==='honor'?'<span class="ability-badge badge-honor">荣耀</span>':
+      '<span class="ability-badge badge-base">基础</span>';
+    d.innerHTML=`<div class="ability-name">${a.icon||'✨'} ${a.name} ${b}</div><div class="ability-effect">${a.effect}</div><div class="ability-detail">${a.detail}</div><div class="ability-type type-${a.type}">${tn[a.type]||a.type}</div>`;
+    return d;
+  }
+  
+  // 配置系统
+  let CONFIG = {
+    INITIAL_CELLS: 3,
+    MAX_POPULATION: 40,
+    NUTRIENT_COUNT: 50,
+    PLANT_COUNT: 8,
+    XP_MULTIPLIER: 1.0,
+    CORPSE_DURATION: 3, // 秒
+    FRIENDLY_FIRE_PENALTY: 0.5, // 50%
+    ABILITY_INHERIT_CHANCE: 0.1, // 10%
+    
+    CELL_RADIUS_MIN: 4,
+    CELL_RADIUS_MAX: 12,
+    CELL_RADIUS_DEF_SCALE: 1.2,
+    PLAYER_BASE_SPEED: 0.6,
+    LIFESPAN_LIMIT: 20000,
+    LIFESPAN_VARIANCE: 5000,
+    PLANT_RADIUS: 28,
+    PLANT_NUTRIENT_RATE: 0.35,
+    NUTRIENT_NEAR_PLANT_RATIO: 0.7,
+    BASE_HEALTH: 100,
+    BASE_ENERGY: 100,
+    ENERGY_CONSUMPTION: 0.06,
+    HEALTH_DECAY: 0.002,
+    PROTECTION_TIME: 120,
+    REPRODUCTION_COOLDOWN: 1200,
+    REPRODUCTION_ENERGY_COST: 70,
+    NUTRIENT_ENERGY_GAIN: 20,
+    PLANT_ENERGY_GAIN: 0.2,
+    PLANT_HEALTH_GAIN: 0.08,
+    MAX_CHILDREN_PER_CELL: 3,
+    REPRO_MIN_AGE: 500,
+    REPRO_MIN_ENERGY: 85,
+    WEAKNESS_DURATION: 400,
+    WEAKNESS_ATTACK_REDUCTION: 0.4,
+    WEAKNESS_DEFENSE_REDUCTION: 0.3,
+    MAX_NUTRIENTS: 60,
+    PREDATION_RATIO: 1.35,
+    PREDATION_DAMAGE: 0.6,
+    PREDATION_ENERGY_GAIN: 0.5,
+    PARASITE_MIN_RATIO: 1.4,
+    PARASITE_DRAIN: 0.08,
+    PARASITE_ATTACH_CHANCE: 0.4,
+    PARASITE_MAX_DURATION: 3000,
+    SYMBIOSIS_RANGE: 120,
+    SYMBIOSIS_HEAL: 0.12,
+    SYMBIOSIS_ENERGY: 0.06,
+    COOPERATION_RANGE: 160,
+    COOPERATION_SPEED_BOOST: 0.25,
+    COOPERATION_MAX_BOOST: 0.5,
+    TRADING_RANGE: 80,
+    TRADING_ENERGY_COST: 30,
+    TRADING_CHANCE: 0.03,
+    EDUCATION_MIN_AGE: 600,
+    EDUCATION_CHANCE: 0.35,
+    
+    // 新机制
+    XP_PER_NUTRIENT: 10,
+    XP_PER_CORPSE: 50,
+    XP_PER_KILL: 100,
+    XP_LEVEL_MULTIPLIER: 1.2,
+    BASE_XP_REQUIRED: 100,
+    SKILL_POINTS_PER_LEVEL: 1,
+    LIFESPAN_PER_LEVEL: 500,
+    ENERGY_REST_RATE: 0.03,
+    ENERGY_MOVE_COST: 0.1,
+    CORPSE_TO_NUTRIENT_RATIO: 0.3 // 30%转化为营养块
+  };
+  
+  // 游戏状态
+  let cells=[],plants=[],nutrients=[],corpses=[],cellIdCounter=0;
+  let gameStats={
+    totalCellsBorn:0,totalCellsDied:0,totalReproductions:0,
+    totalConsumptions:0,totalMutations:0,totalLevelUps:0,
+    maxLifespan:0,highestLevel:0,species:new Set()
+  };
+  let eventLogDirty=false;
+  
+  // 细胞配置
+  let cellConfigs = [];
+  
+  class Cell {
+    constructor(config, x, y, parentId=null, generation=0){
+      this.id = ++cellIdCounter;
+      this.x = x;
+      this.y = y;
+      this.generation = generation;
+      
+      // 从配置或继承
+      if(parentId){
+        const parent = cells.find(c => c.id === parentId);
+        if(parent){
+          this.name = parent.name.split('-')[0] + '-' + generation;
+          this.color = parent.color;
+          this.lineageId = parent.lineageId;
+          this.racialAbility = parent.racialAbility;
+          
+          // 继承属性
+          this.attributes = {
+            attack: Math.max(1, parent.attributes.attack + (Math.random()-0.5)*2),
+            defense: Math.max(1, parent.attributes.defense + (Math.random()-0.5)*2),
+            speed: Math.max(0.1, parent.attributes.speed + (Math.random()-0.5)*0.1),
+            perception: Math.max(10, parent.attributes.perception + (Math.random()-0.5)*10),
+            recovery: Math.max(0.1, parent.attributes.recovery + (Math.random()-0.5)*0.1),
+            social: Math.max(0, Math.min(1, parent.attributes.social + (Math.random()-0.5)*0.1))
+          };
+        }
+      } else if(config){
+        this.name = config.name || `细胞-${this.id}`;
+        this.color = config.color || '#4cc9f0';
+        this.lineageId = config.lineageId || 0;
+        this.racialAbility = config.racialAbility || ABILITY_SYSTEM.baseAbilities[0];
+        
+        this.attributes = {
+          attack: config.attack || 5+Math.random()*10,
+          defense: config.defense || 5+Math.random()*10,
+          speed: config.speed || 0.5+Math.random()*0.5,
+          perception: config.perception || 50+Math.random()*50,
+          recovery: config.recovery || 0.5+Math.random()*0.5,
+          social: config.social || Math.random()
+        };
+      } else {
+        this.name = `游离-${this.id}`;
+        this.color = '#888888';
+        this.lineageId = -1;
+        this.racialAbility = null;
+        
+        this.attributes = {
+          attack: 5+Math.random()*10,
+          defense: 5+Math.random()*10,
+          speed: 0.5+Math.random()*0.5,
+          perception: 50+Math.random()*50,
+          recovery: 0.5+Math.random()*0.5,
+          social: Math.random()
+        };
+      }
+      
+      // 等级系统
+      this.level = 1;
+      this.xp = 0;
+      this.xpRequired = CONFIG.BASE_XP_REQUIRED;
+      this.skillPoints = 0;
+      
+      // 能力系统
+      this.abilities = [];
+      this.specialAbilities = [];
+      if(this.racialAbility){
+        this.abilities.push(this.racialAbility);
+        this.specialAbilities.push(this.racialAbility);
+      }
+      
+      // 随机获得1-2个额外能力
+      const ac = 1 + Math.floor(Math.random()*2);
+      for(let i=0; i<ac; i++){
+        const ab = ABILITY_SYSTEM.getRandomAbility();
+        if(!this.abilities.some(a => a.name === ab.name)){
+          this.abilities.push(ab);
+          if(ab.category !== 'base') this.specialAbilities.push(ab);
+        }
+      }
+      
+      this.applyAbilityEffects();
+      
+      // 基础属性
+      const baseRadius = CONFIG.CELL_RADIUS_MIN + (this.attributes.defense / 10) * (CONFIG.CELL_RADIUS_MAX - CONFIG.CELL_RADIUS_MIN);
+      this.radius = Math.min(CONFIG.CELL_RADIUS_MAX, baseRadius * CONFIG.CELL_RADIUS_DEF_SCALE);
+      this.health = CONFIG.BASE_HEALTH * (0.8 + this.attributes.recovery*0.4);
+      this.maxHealth = this.health;
+      this.energy = CONFIG.BASE_ENERGY;
+      this.maxEnergy = CONFIG.BASE_ENERGY;
+      this.age = 0;
+      this.lifespan = CONFIG.LIFESPAN_LIMIT + (Math.random()*2-1)*CONFIG.LIFESPAN_VARIANCE;
+      this.protectionTimer = CONFIG.PROTECTION_TIME;
+      this.isProtected = true;
+      
+      // 繁殖相关
+      this.reproductionReady = false;
+      this.reproductionCooldown = 0;
+      this.children = 0;
+      this.weaknessTimer = 0;
+      this.isWeak = false;
+      this._origAttack = this.attributes.attack;
+      this._origDefense = this.attributes.defense;
+      
+      // 颜色变体
+      this._darkColor = darkenColor(this.color, 0.15);
+      this._lightColor = lightenColor(this.color, 0.15);
+      
+      // 移动
+      this.vx = 0;
+      this.vy = 0;
+      this._wanderAngle = Math.random()*Math.PI*2;
+      this.relations = new Map();
+      this.aiState = 'seek_nutrient';
+      this.aiTarget = null;
+      
+      // 统计
+      this.nutrientsConsumed = 0;
+      this.cellsConsumed = 0;
+      this.mutationLevel = 0;
+      this.visualType = this.abilities.length>0 ? this.abilities[0].type : 'metabolic';
+      this.visualPhase = Math.random()*Math.PI*2;
+      
+      // 寄生相关
+      this.parasiteHost = null;
+      this.parasites = [];
+      this.parasiteTimer = 0;
+      this.cooperationBoost = 0;
+      
+      gameStats.totalCellsBorn++;
+      gameStats.species.add(this.color);
+    }
+    
+    applyAbilityEffects(){
+      this.abilities.forEach(a => {
+        const m = a.effect.match(/(\d+)%/);
+        if(m){
+          const val = parseInt(m[1])/100;
+          if(a.effect.includes('速度')) this.attributes.speed *= (1+val);
+          else if(a.effect.includes('防御')) this.attributes.defense *= (1+val);
+          else if(a.effect.includes('攻击')) this.attributes.attack *= (1+val);
+          else if(a.effect.includes('感知')) this.attributes.perception *= (1+val);
+          else if(a.effect.includes('恢复')) this.attributes.recovery *= (1+val);
+          else if(a.effect.includes('社交')) this.attributes.social *= (1+val);
+        }
+      });
+    }
+    
+    addXP(amount){
+      this.xp += amount * CONFIG.XP_MULTIPLIER;
+      if(this.xp >= this.xpRequired){
+        this.levelUp();
+      }
+    }
+    
+    levelUp(){
+      this.level++;
+      this.xp -= this.xpRequired;
+      this.xpRequired = Math.floor(this.xpRequired * CONFIG.XP_LEVEL_MULTIPLIER);
+      this.skillPoints += CONFIG.SKILL_POINTS_PER_LEVEL;
+      this.lifespan += CONFIG.LIFESPAN_PER_LEVEL;
+      this.maxHealth += 10;
+      this.health = Math.min(this.maxHealth, this.health + 20);
+      this.maxEnergy += 10;
+      this.energy = Math.min(this.maxEnergy, this.energy + 20);
+      
+      gameStats.totalLevelUps++;
+      gameStats.highestLevel = Math.max(gameStats.highestLevel, this.level);
+      addEvent('⭐', `${this.name} 升级到 Lv${this.level}！获得1技能点`, 'levelup');
+    }
+    
+    useSkillPoint(attribute){
+      if(this.skillPoints <= 0) return false;
+      
+      switch(attribute){
+        case 'attack': this.attributes.attack += 2; break;
+        case 'defense': this.attributes.defense += 2; break;
+        case 'speed': this.attributes.speed += 0.1; break;
+        case 'perception': this.attributes.perception += 10; break;
+        case 'recovery': this.attributes.recovery += 0.05; break;
+        case 'social': this.attributes.social += 0.05; break;
+      }
+      
+      this.skillPoints--;
+      return true;
+    }
+    
+    updateProtection(){
+      if(this.isProtected){
+        this.protectionTimer--;
+        if(this.protectionTimer <= 0) this.isProtected = false;
+      }
+    }
+    
+    updateWeakness(){
+      if(this.isWeak){
+        this.weaknessTimer--;
+        if(this.weaknessTimer <= 0){
+          this.isWeak = false;
+          this.attributes.attack = this._origAttack;
+          this.attributes.defense = this._origDefense;
+        }
+      }
+    }
+    
+    updateVitals(){
+      // 健康衰减
+      this.health -= CONFIG.HEALTH_DECAY * (1 - this.attributes.recovery*0.5);
+      
+      // 能量消耗：移动消耗，静止恢复
+      const isMoving = Math.abs(this.vx) > 0.01 || Math.abs(this.vy) > 0.01;
+      if(isMoving){
+        this.energy -= CONFIG.ENERGY_MOVE_COST * this.attributes.speed;
+      }else{
+        this.energy += CONFIG.ENERGY_REST_RATE * this.attributes.recovery;
+      }
+      
+      // 基础能量消耗
+      this.energy -= CONFIG.ENERGY_CONSUMPTION;
+      
+      // 能力效果
+      this.abilities.forEach(a => {
+        if(a.effect.includes('恢复能量')) this.energy += 0.06 * this.attributes.recovery;
+        if(a.effect.includes('恢复健康')) this.health += 0.03 * this.attributes.recovery;
+      });
+      
+      // 寄生效果
+      if(this.parasites.length > 0){
+        const drain = this.parasites.length * CONFIG.PARASITE_DRAIN;
+        this.energy -= drain;
+        this.health -= drain * 0.3;
+      }
+      
+      if(this.parasiteHost !== null){
+        this.parasiteTimer++;
+        this.energy += CONFIG.PARASITE_DRAIN;
+        if(this.parasiteTimer > CONFIG.PARASITE_MAX_DURATION || !this.parasiteHost || this.parasiteHost.health <= 0 || this.parasiteHost.energy <= 0){
+          if(this.parasiteHost) this.parasiteHost.parasites = this.parasiteHost.parasites.filter(p => p !== this);
+          this.parasiteHost = null;
+          this.parasiteTimer = 0;
+        }
+      }
+      
+      this.health = Math.max(0, Math.min(this.maxHealth, this.health));
+      this.energy = Math.max(0, Math.min(this.maxEnergy, this.energy));
+      
+      // 能量耗尽时健康也会减少
+      if(this.energy <= 0){
+        this.health -= 0.1 * (1 - this.attributes.recovery*0.3);
+      }
+      
+      if(this.energy >= CONFIG.REPRO_MIN_ENERGY && this.age >= CONFIG.REPRO_MIN_AGE && this.reproductionCooldown <= 0){
+        this.reproductionReady = true;
+      }
+      
+      return !(this.health <= 0 || this.age >= this.lifespan);
+    }
+    
+    makeDecision(allCells, allPlants, allNutrients, allCorpses){
+      this.age++;
+      this.updateWeakness();
+      if(this.reproductionCooldown > 0) this.reproductionCooldown--;
+      
+      if(this.parasiteHost !== null) return;
+      
+      // AI决策优先级
+      if(this.energy < 20) this.aiState = 'seek_nutrient';
+      else if(this.health < 30) this.aiState = 'rest';
+      else if(allCorpses.length > 0 && Math.random() < 0.3) this.aiState = 'seek_corpse';
+      else if(this.reproductionReady && this.energy >= CONFIG.REPRO_MIN_ENERGY && 
+              this.children < CONFIG.MAX_CHILDREN_PER_CELL && 
+              cells.length < CONFIG.MAX_POPULATION && 
+              Math.random() < 0.02) this.aiState = 'reproduce';
+      else if(this.attributes.social > 0.5 && Math.random() < 0.12) this.aiState = 'socialize';
+      else if(Math.random() < 0.3 && allPlants.length > 0) this.aiState = 'seek_plant';
+      else this.aiState = 'seek_nutrient';
+      
+      switch(this.aiState){
+        case 'seek_nutrient': this.findNearest(allNutrients, 'nutrient', this.attributes.perception); break;
+        case 'seek_plant': this.findNearest(allPlants, 'plant', this.attributes.perception*1.2); break;
+        case 'seek_corpse': this.findNearest(allCorpses, 'corpse', this.attributes.perception); break;
+        case 'socialize': this.findSocialPartner(allCells); break;
+        case 'reproduce': this.findNearest([], 'position', 0); break;
+        case 'rest': this.aiTarget = null; break;
+      }
+    }
+    
+    findNearest(list, type, range){
+      let nearest = null, minDist = Infinity;
+      for(const obj of list){
+        const dx = obj.x - this.x, dy = obj.y - this.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < minDist && dist < range){
+          minDist = dist;
+          nearest = {type, obj, dx, dy, dist};
+        }
+      }
+      if(type === 'position' && list.length === 0){
+        const a = Math.random()*Math.PI*2, d = this.radius*3;
+        nearest = {type:'position', x:this.x+Math.cos(a)*d, y:this.y+Math.sin(a)*d, dx:Math.cos(a)*d, dy:Math.sin(a)*d, dist:d};
+      }
+      this.aiTarget = nearest;
+    }
+    
+    findSocialPartner(allCells){
+      let best = null, bestScore = -Infinity;
+      for(const cell of allCells){
+        if(cell.id === this.id) continue;
+        const dx = cell.x - this.x, dy = cell.y - this.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < this.attributes.perception){
+          const rs = this.relations.get(cell.id) || 0;
+          const gs = 1 - Math.abs((this.lineageId === cell.lineageId ? 0.5 : 0) - 0.5);
+          const score = rs*0.6 + gs*0.4;
+          if(score > bestScore){
+            bestScore = score;
+            best = {type:'cell', obj:cell, dx, dy, dist, score};
+          }
+        }
+      }
+      this.aiTarget = best;
+    }
+    
+    act(){
+      if(!this.aiTarget){
+        if(Math.random() < 0.03) this._wanderAngle = Math.random()*Math.PI*2;
+        this._wanderAngle += (Math.random()-0.5)*0.25;
+        let spd = CONFIG.PLAYER_BASE_SPEED * this.attributes.speed * (1+this.cooperationBoost);
+        this.vx = Math.cos(this._wanderAngle) * spd * 0.35;
+        this.vy = Math.sin(this._wanderAngle) * spd * 0.35;
+      }else{
+        const d = this.aiTarget.dist || 1;
+        const nx = this.aiTarget.dx / d, ny = this.aiTarget.dy / d;
+        let spd = CONFIG.PLAYER_BASE_SPEED * this.attributes.speed * (1+this.cooperationBoost);
+        if(this.aiState === 'socialize') spd *= 0.5;
+        this.vx += (nx * spd - this.vx) * 0.08;
+        this.vy += (ny * spd - this.vy) * 0.08;
+      }
+      
+      this.x += this.vx * speedMultiplier;
+      this.y += this.vy * speedMultiplier;
+      
+      const m = this.radius;
+      if(this.x < m){ this.x = m; this.vx *= -0.2; }
+      if(this.x > W-m){ this.x = W-m; this.vx *= -0.2; }
+      if(this.y < m){ this.y = m; this.vy *= -0.2; }
+      if(this.y > H-m){ this.y = H-m; this.vy *= -0.2; }
+    }
+    
+    checkInteractions(){
+      // 吞噬营养块
+      for(let i=nutrients.length-1; i>=0; i--){
+        const nut = nutrients[i];
+        const dx = this.x - nut.x, dy = this.y - nut.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < this.radius + nut.radius + 4){
+          this.energy += CONFIG.NUTRIENT_ENERGY_GAIN;
+          this.addXP(CONFIG.XP_PER_NUTRIENT);
+          this.nutrientsConsumed++;
+          gameStats.totalConsumptions++;
+          nutrients[i] = spawnNutrient();
+          return true;
+        }
+      }
+      
+      // 吞噬尸体
+      for(let i=corpses.length-1; i>=0; i--){
+        const corpse = corpses[i];
+        const dx = this.x - corpse.x, dy = this.y - corpse.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < this.radius + corpse.radius){
+          this.energy += CONFIG.NUTRIENT_ENERGY_GAIN * 3;
+          this.addXP(CONFIG.XP_PER_CORPSE);
+          this.health += 15;
+          
+          // 极小概率获得尸体细胞的能力
+          if(corpse.abilities && Math.random() < CONFIG.ABILITY_INHERIT_CHANCE){
+            const ability = corpse.abilities[Math.floor(Math.random()*corpse.abilities.length)];
+            if(ability && !this.abilities.some(a => a.name === ability.name)){
+              this.abilities.push(ability);
+              if(ability.category !== 'base') this.specialAbilities.push(ability);
+              this.applyAbilityEffects();
+              addEvent('💫', `${this.name} 从尸体中继承了「${ability.name}」`, 'mutation');
+            }
+          }
+          
+          corpses.splice(i,1);
+          return true;
+        }
+      }
+      
+      // 植物恢复
+      for(const plant of plants){
+        const dx = this.x - plant.x, dy = this.y - plant.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < this.radius + plant.radius){
+          this.energy += CONFIG.PLANT_ENERGY_GAIN;
+          this.health += CONFIG.PLANT_HEALTH_GAIN;
+          return true;
+        }
+      }
+      
+      return false;
+    }
+    
+    tryReproduce(){
+      if(this.reproductionCooldown > 0 || !this.reproductionReady || 
+         this.energy < CONFIG.REPRO_MIN_ENERGY || 
+         cells.length >= CONFIG.MAX_POPULATION || 
+         this.children >= CONFIG.MAX_CHILDREN_PER_CELL) return null;
+      
+      this.energy -= CONFIG.REPRODUCTION_ENERGY_COST;
+      this.reproductionCooldown = CONFIG.REPRODUCTION_COOLDOWN;
+      this.reproductionReady = false;
+      this.children++;
+      this.isWeak = true;
+      this.weaknessTimer = CONFIG.WEAKNESS_DURATION;
+      this._origAttack = this.attributes.attack;
+      this._origDefense = this.attributes.defense;
+      
+      gameStats.totalReproductions++;
+      addEvent('👶', `${this.name} 繁殖后代（剩余${CONFIG.MAX_CHILDREN_PER_CELL-this.children}次）`, 'reproduction');
+      
+      const a = Math.random()*Math.PI*2, d = this.radius*2.5;
+      const ox = this.x + Math.cos(a)*d, oy = this.y + Math.sin(a)*d;
+      const off = new Cell(null, ox, oy, this.id, this.generation+1);
+      
+      // 教育机制
+      if(this.age >= CONFIG.EDUCATION_MIN_AGE && Math.random() < CONFIG.EDUCATION_CHANCE && this.abilities.length > 0){
+        const learned = this.abilities[Math.floor(Math.random()*this.abilities.length)];
+        if(!off.abilities.some(a => a.name === learned.name)){
+          off.abilities.push(learned);
+          off.specialAbilities.push(learned);
+          addEvent('🎓', `${this.name} 教育了 ${off.name}，传授「${learned.name}」`, 'education');
+        }
+      }
+      
+      // 变异机制（修复了作用域bug）
+      if(Math.random() < 0.25){
+        off.mutationLevel++;
+        let newAb=null, aa=null;
+        if(Math.random() < 0.5){
+          newAb = ABILITY_SYSTEM.createNewAbility();
+          off.abilities.push(newAb);
+          off.specialAbilities.push(newAb);
+          gameStats.totalMutations++;
+          addEvent('🧬', `${off.name} 获得新能力「${newAb.name}」`, 'mutation');
+        }else{
+          const ba = this.abilities.length > 0 ? this.abilities[Math.floor(Math.random()*this.abilities.length)] : ABILITY_SYSTEM.baseAbilities[0];
+          aa = ABILITY_SYSTEM.generateAIMutation(ba);
+          off.abilities.push(aa);
+          off.specialAbilities.push(aa);
+          gameStats.totalMutations++;
+          addEvent('🤖', `${off.name} AI变异出「${aa.name}」`, 'mutation');
+        }
+        off.visualType = newAb ? newAb.type : aa.type;
+        off.updateName();
+        ABILITY_SYSTEM.dirty = true;
+      }
+      
+      // 继承关系
+      for(const [cid, score] of this.relations){
+        if(score > 0.25) off.relations.set(cid, score*0.4);
+      }
+      
+      return off;
+    }
+    
+    updateName(){
+      const oldName = this.name;
+      if(this.lineageId >= 0){
+        this.name = `谱系${this.lineageId+1}-${this.generation}`;
+        if(this.level > 5) this.name += `-Lv${this.level}`;
+        if(this.mutationLevel > 0) this.name += `-M${this.mutationLevel}`;
+      }else{
+        this.name = `游离-${this.id}`;
+      }
+      if(oldName !== this.name && selectedCell === this) updateSelectedInfo();
+    }
+    
+    getInfo(){
+      const status = [];
+      if(this.isProtected) status.push('🔒保护期');
+      if(this.isWeak) status.push('💪虚弱期');
+      if(this.parasiteHost) status.push('🪱寄生中');
+      if(this.parasites.length > 0) status.push(`🪱被寄生(${this.parasites.length})`);
+      if(this.cooperationBoost > 0) status.push(`👥合作+${Math.round(this.cooperationBoost*100)}%`);
+      
+      return {
+        name: this.name,
+        level: this.level,
+        xp: this.xp,
+        xpRequired: this.xpRequired,
+        skillPoints: this.skillPoints,
+        health: Math.round(this.health),
+        maxHealth: Math.round(this.maxHealth),
+        energy: Math.round(this.energy),
+        maxEnergy: Math.round(this.maxEnergy),
+        age: this.age,
+        lifespan: Math.round(this.lifespan),
+        ageDisplay: `${this.age}/${Math.round(this.lifespan)}`,
+        generation: this.generation,
+        attack: Math.round(this.attributes.attack),
+        defense: Math.round(this.attributes.defense),
+        speed: Math.round(this.attributes.speed*100),
+        perception: Math.round(this.attributes.perception),
+        recovery: Math.round(this.attributes.recovery*100),
+        social: Math.round(this.attributes.social*100),
+        status: status.join(' '),
+        specialAbilities: this.specialAbilities.map(a => `${a.icon}${a.name}: ${a.detail}`).join('<br>'),
+        color: this.color,
+        mutationLevel: this.mutationLevel,
+        visualType: this.visualType
+      };
+    }
+  }
+  
+  class Plant {
+    constructor(x, y){
+      this.x = x;
+      this.y = y;
+      this.radius = CONFIG.PLANT_RADIUS;
+      this.phase = Math.random()*Math.PI*2;
+      this.nutrientTimer = 0;
+    }
+    
+    update(){
+      this.nutrientTimer++;
+      if(this.nutrientTimer > 80 && Math.random() < CONFIG.PLANT_NUTRIENT_RATE && nutrients.length < CONFIG.MAX_NUTRIENTS){
+        const a = Math.random()*Math.PI*2, d = this.radius*(0.6+Math.random()*1.5);
+        nutrients.push({
+          x: this.x + Math.cos(a)*d,
+          y: this.y + Math.sin(a)*d,
+          radius: 3+Math.random()*2,
+          pulse: Math.random()*Math.PI*2,
+          fromPlant: true
+        });
+        this.nutrientTimer = 0;
+      }
+    }
+    
+    draw(ctx){
+      ctx.fillStyle = 'rgba(76,175,80,0.1)';
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(152,251,152,0.85)';
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.radius*0.82, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(76,175,80,0.6)';
+      for(let i=0; i<6; i++){
+        const a = i*Math.PI/3 + this.phase;
+        const lx = this.x + Math.cos(a)*this.radius*0.75;
+        const ly = this.y + Math.sin(a)*this.radius*0.75;
+        ctx.beginPath();
+        ctx.ellipse(lx, ly, this.radius*0.3, this.radius*0.1, a, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+  }
+  
+  class Corpse {
+    constructor(cell){
+      this.x = cell.x;
+      this.y = cell.y;
+      this.radius = cell.radius * 0.8;
+      this.color = darkenColor(cell.color, 0.3);
+      this.timer = CONFIG.CORPSE_DURATION * 60; // 转换为帧数
+      this.abilities = cell.abilities;
+      this.lineageId = cell.lineageId;
+    }
+    
+    update(){
+      this.timer--;
+      return this.timer > 0;
+    }
+    
+    draw(ctx){
+      const alpha = 0.3 + 0.4 * (this.timer / (CONFIG.CORPSE_DURATION*60));
+      ctx.fillStyle = this.color.replace(')', `,${alpha})`).replace('rgb', 'rgba');
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
+      
+      ctx.strokeStyle = 'rgba(200,200,200,0.5)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+  
+  // 工具函数
+  function resize(){
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * devicePixelRatio;
+    canvas.height = H * devicePixelRatio;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    gridCanvas.width = W;
+    gridCanvas.height = H;
+    gridDirty = true;
+  }
+  
+  function spawnNutrient(){
+    let x, y;
+    if(plants.length > 0 && Math.random() < CONFIG.NUTRIENT_NEAR_PLANT_RATIO){
+      const p = plants[Math.floor(Math.random()*plants.length)];
+      const a = Math.random()*Math.PI*2, d = p.radius*(0.7+Math.random()*1.5);
+      x = p.x + Math.cos(a)*d;
+      y = p.y + Math.sin(a)*d;
+    }else{
+      const pad = 60;
+      x = pad + Math.random()*(W-pad*2);
+      y = pad + Math.random()*(H-pad*2);
+    }
+    return {x, y, radius:3+Math.random()*2, pulse:Math.random()*Math.PI*2, fromPlant:false};
+  }
+  
+  function lightenColor(hex, amt){
+    let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    r = Math.min(255, Math.floor(r + 255*amt));
+    g = Math.min(255, Math.floor(g + 255*amt));
+    b = Math.min(255, Math.floor(b + 255*amt));
+    return '#' + r.toString(16).padStart(2,'0') + g.toString(16).padStart(2,'0') + b.toString(16).padStart(2,'0');
+  }
+  
+  function darkenColor(hex, amt){
+    let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    r = Math.max(0, Math.floor(r - 255*amt));
+    g = Math.max(0, Math.floor(g - 255*amt));
+    b = Math.max(0, Math.floor(b - 255*amt));
+    return '#' + r.toString(16).padStart(2,'0') + g.toString(16).padStart(2,'0') + b.toString(16).padStart(2,'0');
+  }
+  
+  function addEvent(icon, msg, cls){
+    const entry = {icon, msg, cls, frame:gameFrame, time:new Date().toLocaleTimeString()};
+    eventLog.unshift(entry);
+    if(eventLog.length > MAX_EVENTS) eventLog.pop();
+    eventLogDirty = true;
+  }
+  
+  function updateEventLogUI(){
+    if(!eventLogEl || !eventLogDirty) return;
+    eventLogDirty = false;
+    if(eventLog.length === 0){
+      eventLogEl.innerHTML = '<div class="no-events">等待事件发生...</div>';
+      return;
+    }
+    eventLogEl.innerHTML = eventLog.slice(0,50).map(e => 
+      `<div class="event-entry">
+        <span class="event-time">${e.time}</span>
+        <span class="event-icon">${e.icon}</span>
+        <span class="event-msg ${e.cls||''}">${e.msg}</span>
+      </div>`
+    ).join('');
+  }
+  
+  function drawGrid(){
+    if(!showGrid) return;
+    if(gridDirty){
+      gridCtx.clearRect(0,0,W,H);
+      gridCtx.strokeStyle = 'rgba(76,201,240,0.05)';
+      gridCtx.lineWidth = 0.5;
+      for(let x=60; x<W; x+=60){
+        gridCtx.beginPath(); gridCtx.moveTo(x,0); gridCtx.lineTo(x,H); gridCtx.stroke();
+      }
+      for(let y=60; y<H; y+=60){
+        gridCtx.beginPath(); gridCtx.moveTo(0,y); gridCtx.lineTo(W,y); gridCtx.stroke();
+      }
+      gridDirty = false;
+    }
+    ctx.drawImage(gridCanvas, 0, 0, W, H);
+  }
+  
+  function drawRange(cell){
+    if(!showRange) return;
+    ctx.fillStyle = 'rgba(76,201,240,0.05)';
+    ctx.beginPath(); ctx.arc(cell.x, cell.y, cell.attributes.perception, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(76,201,240,0.2)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2,2]);
+    ctx.beginPath(); ctx.arc(cell.x, cell.y, cell.attributes.perception, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  
+  function drawNutrient(nut){
+    const p = 1 + Math.sin(nut.pulse)*0.12;
+    const r = nut.radius * p;
+    ctx.fillStyle = nut.fromPlant ? 'rgba(152,251,152,0.15)' : 'rgba(76,201,240,0.15)';
+    ctx.beginPath(); ctx.arc(nut.x, nut.y, r*1.5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = nut.fromPlant ? '#98FB98' : '#4cc9f0';
+    ctx.beginPath(); ctx.arc(nut.x, nut.y, r, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.arc(nut.x-r*0.25, nut.y-r*0.25, r*0.25, 0, Math.PI*2); ctx.fill();
+  }
+  
+  function drawCell(cell){
+    const x=cell.x, y=cell.y, r=cell.radius, c=cell.color, isSel=selectedCell&&selectedCell.id===cell.id;
+    
+    if(showRange) drawRange(cell);
+    
+    if(cell.isProtected){
+      ctx.strokeStyle = c+'44';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.arc(x, y, r+6, 0, Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    
+    if(cell.isWeak){
+      ctx.strokeStyle = 'rgba(255,107,107,0.4)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.arc(x, y, r+3, 0, Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    
+    if(cell.parasiteHost){
+      ctx.strokeStyle = 'rgba(156,39,176,0.3)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2,4]);
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(cell.parasiteHost.x,cell.parasiteHost.y); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    
+    if(cell.lineageId >= 0){
+      ctx.strokeStyle = cell.color;
+      ctx.lineWidth = 2.5;
+      ctx.globalAlpha = 0.55;
+      ctx.beginPath(); ctx.arc(x, y, r+2, 0, Math.PI*2); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    
+    if(cell.cooperationBoost > 0){
+      ctx.strokeStyle = 'rgba(33,150,243,'+(0.3+cell.cooperationBoost*0.5)+')';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([2,2]);
+      ctx.beginPath(); ctx.arc(x, y, r+8, 0, Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    
+    // 等级光环
+    if(cell.level > 1){
+      const glow = 0.1 + (cell.level/20)*0.3;
+      ctx.fillStyle = c.replace(')', `,${glow})`).replace('rgb', 'rgba');
+      ctx.beginPath(); ctx.arc(x, y, r*1.5, 0, Math.PI*2); ctx.fill();
+    }
+    
+    // 细胞主体
+    ctx.fillStyle = cell._darkColor;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = c;
+    ctx.beginPath(); ctx.arc(x, y, r*0.82, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = cell._lightColor;
+    ctx.beginPath(); ctx.arc(x, y, r*0.55, 0, Math.PI*2); ctx.fill();
+    
+    // 等级标记
+    if(cell.level > 1){
+      ctx.fillStyle = '#ffd700';
+      ctx.font = `${Math.max(8, r*0.4)}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(cell.level.toString(), x, y);
+    }
+    
+    if(showNames){
+      ctx.save();
+      ctx.font = `${Math.max(9, r*0.35)}px Inter,sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillStyle = '#e6e6e6';
+      ctx.globalAlpha = 0.85;
+      ctx.fillText(cell.name, x, y-r-6);
+      ctx.restore();
+    }
+    
+    if(isSel){
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(x, y, r+4, 0, Math.PI*2); ctx.stroke();
+    }
+  }
+  
+  function processMechanisms(){
+    const n = cells.length;
+    if(n < 2) return;
+    
+    const maxChecks = Math.min(200, n*(n-1)/2);
+    let checks = 0;
+    
+    for(let i=0; i<n && checks<maxChecks; i++){
+      for(let j=i+1; j<n && checks<maxChecks; j++){
+        checks++;
+        const a = cells[i], b = cells[j];
+        if(!a || !b) continue;
+        
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const touchDist = a.radius + b.radius;
+        
+        // 捕食机制
+        if(dist < touchDist + 8){
+          const attackRatio = a.attributes.attack / b.attributes.defense;
+          const sameLineage = a.lineageId === b.lineageId;
+          const penalty = sameLineage ? CONFIG.FRIENDLY_FIRE_PENALTY : 1.0;
+          
+          if(attackRatio >= CONFIG.PREDATION_RATIO){
+            const damage = CONFIG.PREDATION_DAMAGE * (attackRatio-1) * a.attributes.attack * penalty;
+            b.health -= damage;
+            a.energy += b.health * CONFIG.PREDATION_ENERGY_GAIN * 0.1 * penalty;
+            a.cellsConsumed++;
+            a.addXP(CONFIG.XP_PER_KILL * penalty);
+            
+            if(b.health <= 0){
+              addEvent('🦁', `${a.name}(${Math.round(a.attributes.attack)}) 捕食了 ${b.name}(${Math.round(b.attributes.defense)})${sameLineage?' (同族惩罚)':''}`, 'predation');
+              // 记录被攻击者的死亡原因
+              b.deathByPredator = a.name;
+            }
+          }else if(1/attackRatio >= CONFIG.PREDATION_RATIO){
+            const damage = CONFIG.PREDATION_DAMAGE * (1/attackRatio-1) * b.attributes.attack * penalty;
+            a.health -= damage;
+            b.energy += a.health * CONFIG.PREDATION_ENERGY_GAIN * 0.1 * penalty;
+            b.cellsConsumed++;
+            b.addXP(CONFIG.XP_PER_KILL * penalty);
+            
+            if(a.health <= 0){
+              addEvent('🦁', `${b.name}(${Math.round(b.attributes.attack)}) 捕食了 ${a.name}(${Math.round(a.attributes.defense)})${sameLineage?' (同族惩罚)':''}`, 'predation');
+              // 记录被攻击者的死亡原因
+              a.deathByPredator = b.name;
+            }
+          }
+        }
+        
+        // 共生机制
+        if(dist < CONFIG.SYMBIOSIS_RANGE){
+          let bonus = 1;
+          if(a.lineageId === b.lineageId) bonus = 2;
+          const rs = a.relations.get(b.id) || 0;
+          if(rs > 0.3) bonus *= 1.5;
+          
+          a.health += CONFIG.SYMBIOSIS_HEAL * bonus * a.attributes.recovery;
+          b.health += CONFIG.SYMBIOSIS_HEAL * bonus * b.attributes.recovery;
+          a.energy += CONFIG.SYMBIOSIS_ENERGY * bonus;
+          b.energy += CONFIG.SYMBIOSIS_ENERGY * bonus;
+          
+          if(bonus >= 2 && gameFrame % 60 === 0){
+            a.relations.set(b.id, Math.min(1, (a.relations.get(b.id)||0) + 0.005));
+            b.relations.set(a.id, Math.min(1, (b.relations.get(b.id)||0) + 0.005));
+          }
+        }
+        
+        // 合作机制
+        if(dist < CONFIG.COOPERATION_RANGE){
+          const boost = Math.max(0, 1-dist/CONFIG.COOPERATION_RANGE) * CONFIG.COOPERATION_SPEED_BOOST;
+          a.cooperationBoost = Math.min(CONFIG.COOPERATION_MAX_BOOST, Math.max(a.cooperationBoost, boost));
+          b.cooperationBoost = Math.min(CONFIG.COOPERATION_MAX_BOOST, Math.max(b.cooperationBoost, boost));
+        }
+      }
+    }
+  }
+  
+  function updateUI(){
+    totalCellsEl.textContent = cells.length;
+    totalCellsStatEl.textContent = cells.length;
+    highestLevelEl.textContent = gameStats.highestLevel;
+    highestLevelStatEl.textContent = gameStats.highestLevel;
+    totalConsumptionsEl.textContent = gameStats.totalConsumptions;
+    totalDeathsEl.textContent = gameStats.totalCellsDied;
+    totalLevelUpsEl.textContent = gameStats.totalLevelUps;
+    gameSpeedEl.textContent = speedMultiplier.toFixed(1)+'x';
+    
+    // 更新精英成员
+    const elites = cells.filter(c => c.level > 5 || c.specialAbilities.length > 2)
+                       .sort((a,b) => b.level - a.level)
+                       .slice(0,5);
+    eliteMembersEl.innerHTML = elites.map(c => 
+      `<div style="margin-bottom:6px;padding:6px;background:rgba(0,0,0,0.2);border-radius:6px">
+        <div style="font-weight:600;color:#e6e6e6">${c.name}</div>
+        <div style="font-size:10px;color:rgba(230,230,230,0.6)">
+          等级${c.level} 攻击${Math.round(c.attributes.attack)} 能力${c.specialAbilities.length}
+        </div>
+      </div>`
+    ).join('') || '<div style="color:rgba(230,230,230,0.4);font-size:11px">暂无精英细胞</div>';
+    
+    updateEventLogUI();
+    ABILITY_SYSTEM.updateUI();
+  }
+  
+  function updateSelectedInfo(){
+    if(selectedCell){
+      const i = selectedCell.getInfo();
+      cellNameEl.textContent = i.name;
+      cellLevelEl.textContent = i.level;
+      cellXpBar.style.width = (i.xp / i.xpRequired * 100) + '%';
+      cellHealthEl.textContent = Math.round(i.health) + '%';
+      cellHealthBar.style.width = (i.health / i.maxHealth * 100) + '%';
+      cellEnergyEl.textContent = Math.round(i.energy) + '%';
+      cellEnergyBar.style.width = (i.energy / i.maxEnergy * 100) + '%';
+      cellAgeEl.textContent = i.ageDisplay;
+      cellSkillPointsEl.textContent = i.skillPoints;
+      cellAttackEl.textContent = i.attack;
+      cellDefenseEl.textContent = i.defense;
+      cellSpeedEl.textContent = i.speed;
+      cellPerceptionEl.textContent = i.perception;
+      cellRecoveryEl.textContent = i.recovery;
+      cellSocialEl.textContent = i.social;
+      cellStatusEl.textContent = i.status;
+      cellSpecialAbilitiesEl.innerHTML = i.specialAbilities || '—';
+    }else{
+      cellNameEl.textContent = '无';
+      cellLevelEl.textContent = '-';
+      cellXpBar.style.width = '0%';
+      cellHealthEl.textContent = '-';
+      cellHealthBar.style.width = '0%';
+      cellEnergyEl.textContent = '-';
+      cellEnergyBar.style.width = '0%';
+      cellAgeEl.textContent = '-/-';
+      cellSkillPointsEl.textContent = '-';
+      cellAttackEl.textContent = '0';
+      cellDefenseEl.textContent = '0';
+      cellSpeedEl.textContent = '0';
+      cellPerceptionEl.textContent = '0';
+      cellRecoveryEl.textContent = '0';
+      cellSocialEl.textContent = '0';
+      cellStatusEl.textContent = '—';
+      cellSpecialAbilitiesEl.textContent = '—';
+    }
+  }
+  
+  function gameLoop(timestamp){
+    if(!gameRunning || gamePaused){
+      frameId = requestAnimationFrame(gameLoop);
+      return;
+    }
+    
+    lastTime = timestamp;
+    gameFrame++;
+    
+    // FPS计算
+    fpsFrameCount++;
+    if(timestamp - fpsLastTime >= 1000){
+      fpsCurrent = Math.round(fpsFrameCount * 1000 / (timestamp - fpsLastTime));
+      fpsDisplay.textContent = 'FPS: ' + fpsCurrent;
+      fpsFrameCount = 0;
+      fpsLastTime = timestamp;
+    }
+    
+    // 更新植物
+    if(gameFrame % 2 === 0) plants.forEach(p => p.update());
+    
+    // 更新营养块和尸体
+    nutrients.forEach(n => n.pulse += 0.03 * speedMultiplier);
+    for(let i=corpses.length-1; i>=0; i--){
+      if(!corpses[i].update()){
+        // 尸体分解为营养块
+        if(Math.random() < CONFIG.CORPSE_TO_NUTRIENT_RATIO && nutrients.length < CONFIG.MAX_NUTRIENTS){
+          nutrients.push({
+            x: corpses[i].x,
+            y: corpses[i].y,
+            radius: 4+Math.random()*3,
+            pulse: Math.random()*Math.PI*2,
+            fromPlant: false
+          });
+        }
+        corpses.splice(i,1);
+      }
+    }
+    
+    // 处理机制
+    if(gameFrame % 2 === 0) processMechanisms();
+    
+    // 更新细胞
+    for(let i=cells.length-1; i>=0; i--){
+      const cell = cells[i];
+      cell.updateProtection();
+      
+      if(!cell.updateVitals()){
+        // 细胞死亡 - 记录死亡原因
+        let deathReason = '';
+        if(cell.health <= 0){
+          if(cell.deathByPredator) deathReason = `被${cell.deathByPredator}捕食`;
+          else if(cell.parasites.length > 0) deathReason = '被寄生致死';
+          else if(cell.energy <= 0) deathReason = '能量耗尽导致健康归零';
+          else if(cell.age >= cell.lifespan) deathReason = '自然衰老';
+          else deathReason = '健康耗尽';
+        }else if(cell.age >= cell.lifespan){
+          deathReason = '自然衰老';
+        }else{
+          deathReason = '未知原因';
+        }
+        
+        corpses.push(new Corpse(cell));
+        
+        if(cell.parasiteHost){
+          cell.parasiteHost.parasites = cell.parasiteHost.parasites.filter(p => p !== cell);
+        }
+        for(const p of cell.parasites){
+          p.parasiteHost = null;
+          p.parasiteTimer = 0;
+        }
+        
+        cells.splice(i,1);
+        gameStats.totalCellsDied++;
+        addEvent('💀', `${cell.name} 死亡 (${deathReason})`, 'death');
+        sendDeathEvent(cell, deathReason);
+        
+        if(selectedCell === cell){
+          selectedCell = null;
+          updateSelectedInfo();
+        }
+        continue;
+      }
+      
+      cell.cooperationBoost *= 0.95;
+      if(gameFrame % 2 === 0) cell.makeDecision(cells, plants, nutrients, corpses);
+      cell.act();
+      if(gameFrame % 2 === 0) cell.checkInteractions();
+      if(cell.aiState === 'reproduce' && cell.reproductionReady){
+        const off = cell.tryReproduce();
+        if(off) cells.push(off);
+      }
+      cell.visualPhase += 0.04 * speedMultiplier;
+      gameStats.maxLifespan = Math.max(gameStats.maxLifespan, cell.age);
+    }
+    
+    // 绘制
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0,0,W,H);
+    
+    drawGrid();
+    nutrients.forEach(n => drawNutrient(n));
+    corpses.forEach(c => c.draw(ctx));
+    cells.forEach(c => drawCell(c));
+    plants.forEach(p => p.draw(ctx));
+    
+    if(gameFrame % 15 === 0) updateUI();
+    
+    // 每30帧上报统计数据到后端
+    if(gameFrame % 30 === 0) sendGameStats();
+    
+    frameId = requestAnimationFrame(gameLoop);
+  }
+  
+  // ═══ 后端通信 ═══
+  const BACKEND_URL = 'http://localhost:8080';
+  let simId = null;
+  let statsSent = 0;
+  
+  async function apiCall(method, path, data){
+    try{
+      const opts = {method, headers:{'Content-Type':'application/json'}};
+      if(data) opts.body = JSON.stringify(data);
+      const r = await fetch(BACKEND_URL + path, opts);
+      if(r.ok) return await r.json();
+    }catch(e){
+      // 后端不可用时静默失败
+    }
+    return null;
+  }
+  
+  async function initBackend(){
+    const r = await apiCall('POST', '/api/simulations', {
+      name: '细胞模拟 ' + new Date().toLocaleString(),
+      config: {
+        initial_cells: CONFIG.INITIAL_CELLS,
+        max_population: CONFIG.MAX_POPULATION,
+        nutrient_count: CONFIG.NUTRIENT_COUNT,
+        plant_count: CONFIG.PLANT_COUNT,
+        xp_multiplier: CONFIG.XP_MULTIPLIER,
+        corpse_duration: CONFIG.CORPSE_DURATION,
+        friendly_fire_penalty: CONFIG.FRIENDLY_FIRE_PENALTY,
+        ability_inherit_chance: CONFIG.ABILITY_INHERIT_CHANCE,
+        cell_configs: cellConfigs.map(c => ({name:c.name, type:c.type}))
+      }
+    });
+    if(r && r.id) simId = r.id;
+  }
+  
+  async function sendGameStats(){
+    if(!simId) return;
+    if(statsSent++ > 1000) return; // 限制上报次数，避免过多数据
+    
+    const total = cells.length;
+    if(total === 0) return;
+    
+    const avgH = cells.reduce((s,c) => s + c.health/c.maxHealth, 0) / total * 100;
+    const avgE = cells.reduce((s,c) => s + c.energy/c.maxEnergy, 0) / total * 100;
+    const avgA = cells.reduce((s,c) => s + c.age, 0) / total;
+    const avgS = cells.reduce((s,c) => s + c.size, 0) / total;
+    
+    await apiCall('POST', '/api/stats', {
+      sim_id: simId, frame: gameFrame,
+      total_cells: total, total_plants: plants.length,
+      total_nutrients: nutrients.length, total_corpses: corpses.length,
+      avg_health: Math.round(avgH*10)/10,
+      avg_energy: Math.round(avgE*10)/10,
+      avg_age: Math.round(avgA), avg_size: Math.round(avgS*10)/10
+    });
+  }
+  
+  async function sendDeathEvent(cell, reason){
+    if(!simId) return;
+    await apiCall('POST', '/api/deaths', {
+      sim_id: simId, frame: gameFrame,
+      cell_name: cell.name, cell_type: cell.type,
+      death_reason: reason, cell_age: cell.age,
+      cell_level: cell.level
+    });
+  }
+  
+  // 细胞配置器
+  function createCellConfigurator(){
+    cellConfigurator.innerHTML = '';
+    cellConfigs = [];
+    
+    const initialCells = parseInt(initialCellsSlider.value);
+    for(let i=0; i<initialCells; i++){
+      addCellConfig(i);
+    }
+  }
+  
+  function addCellConfig(index){
+    const colors = ['#4cc9f0','#9c27b0','#ff9800','#4caf50','#e91e63','#00bcd4','#8bc34a','#ff5722'];
+    const config = {
+      id: index,
+      name: `谱系${index+1}`,
+      color: colors[index % colors.length],
+      lineageId: index,
+      attack: 5+Math.random()*10,
+      defense: 5+Math.random()*10,
+      speed: 0.5+Math.random()*0.5,
+      perception: 50+Math.random()*50,
+      recovery: 0.5+Math.random()*0.5,
+      social: Math.random(),
+      racialAbility: ABILITY_SYSTEM.baseAbilities[index % ABILITY_SYSTEM.baseAbilities.length]
+    };
+    cellConfigs.push(config);
+    
+    const div = document.createElement('div');
+    div.className = 'config-cell';
+    div.innerHTML = `
+      <div class="config-header">
+        <input type="text" class="setup-input cell-name-input" value="${config.name}" data-index="${index}" placeholder="谱系名称">
+        <div style="display:flex;gap:8px">
+          <input type="color" value="${config.color}" data-index="${index}" style="width:40px;height:40px;border-radius:8px;border:none;cursor:pointer">
+          <button class="icon-btn danger remove-cell-btn" data-index="${index}" title="删除">×</button>
+        </div>
+      </div>
+      <div class="attr-grid">
+        <div class="attr-item">
+          <label class="setup-label">攻击</label>
+          <input type="range" class="setup-slider" min="1" max="20" step="0.5" value="${config.attack}" data-index="${index}" data-attr="attack">
+          <span class="attr-value" id="attackValue${index}">${Math.round(config.attack)}</span>
+        </div>
+        <div class="attr-item">
+          <label class="setup-label">防御</label>
+          <input type="range" class="setup-slider" min="1" max="20" step="0.5" value="${config.defense}" data-index="${index}" data-attr="defense">
+          <span class="attr-value" id="defenseValue${index}">${Math.round(config.defense)}</span>
+        </div>
+        <div class="attr-item">
+          <label class="setup-label">速度</label>
+          <input type="range" class="setup-slider" min="0.1" max="2.0" step="0.05" value="${config.speed}" data-index="${index}" data-attr="speed">
+          <span class="attr-value" id="speedValue${index}">${config.speed.toFixed(2)}</span>
+        </div>
+        <div class="attr-item">
+          <label class="setup-label">感知</label>
+          <input type="range" class="setup-slider" min="10" max="150" step="1" value="${config.perception}" data-index="${index}" data-attr="perception">
+          <span class="attr-value" id="perceptionValue${index}">${Math.round(config.perception)}</span>
+        </div>
+        <div class="attr-item">
+          <label class="setup-label">恢复</label>
+          <input type="range" class="setup-slider" min="0.1" max="1.5" step="0.05" value="${config.recovery}" data-index="${index}" data-attr="recovery">
+          <span class="attr-value" id="recoveryValue${index}">${config.recovery.toFixed(2)}</span>
+        </div>
+        <div class="attr-item">
+          <label class="setup-label">社交</label>
+          <input type="range" class="setup-slider" min="0" max="1" step="0.05" value="${config.social}" data-index="${index}" data-attr="social">
+          <span class="attr-value" id="socialValue${index}">${config.social.toFixed(2)}</span>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <label class="setup-label">种族能力</label>
+        <select class="setup-input" data-index="${index}" data-attr="racialAbility" style="font-size:0.9rem">
+          ${ABILITY_SYSTEM.baseAbilities.map((a, idx) => 
+            `<option value="${idx}" ${idx === index % ABILITY_SYSTEM.baseAbilities.length ? 'selected' : ''}>${a.icon} ${a.name} - ${a.effect}</option>`
+          ).join('')}
+        </select>
+      </div>
+    `;
+    cellConfigurator.appendChild(div);
+    
+    // 绑定事件
+    const sliders = div.querySelectorAll('input[type="range"]');
+    sliders.forEach(slider => {
+      slider.addEventListener('input', function(){
+        const idx = parseInt(this.dataset.index);
+        const attr = this.dataset.attr;
+        const value = this.type === 'range' ? parseFloat(this.value) : this.value;
+        cellConfigs[idx][attr] = value;
+        document.getElementById(`${attr}Value${idx}`).textContent = 
+          attr === 'speed' || attr === 'recovery' || attr === 'social' ? value.toFixed(2) : Math.round(value);
+      });
+    });
+    
+    div.querySelector('input[type="color"]').addEventListener('input', function(){
+      const idx = parseInt(this.dataset.index);
+      cellConfigs[idx].color = this.value;
+    });
+    
+    div.querySelector('.cell-name-input').addEventListener('input', function(){
+      const idx = parseInt(this.dataset.index);
+      cellConfigs[idx].name = this.value;
+    });
+    
+    div.querySelector('select').addEventListener('change', function(){
+      const idx = parseInt(this.dataset.index);
+      cellConfigs[idx].racialAbility = ABILITY_SYSTEM.baseAbilities[parseInt(this.value)];
+    });
+    
+    div.querySelector('.remove-cell-btn').addEventListener('click', function(){
+      const idx = parseInt(this.dataset.index);
+      if(cellConfigs.length > 1){
+        cellConfigs.splice(idx,1);
+        createCellConfigurator();
+      }
+    });
+  }
+  
+  // 初始化游戏
+  function initGame(){
+    // 更新配置
+    CONFIG.INITIAL_CELLS = parseInt(initialCellsSlider.value);
+    CONFIG.MAX_POPULATION = parseInt(maxPopulationSlider.value);
+    CONFIG.NUTRIENT_COUNT = parseInt(nutrientCountSlider.value);
+    CONFIG.PLANT_COUNT = parseInt(plantCountSlider.value);
+    CONFIG.XP_MULTIPLIER = parseFloat(xpMultiplierSlider.value);
+    CONFIG.CORPSE_DURATION = parseInt(corpseDurationSlider.value);
+    CONFIG.FRIENDLY_FIRE_PENALTY = parseInt(friendlyFirePenaltySlider.value) / 100;
+    CONFIG.ABILITY_INHERIT_CHANCE = parseInt(abilityInheritSlider.value) / 100;
+    
+    // 重置游戏状态
+    resize();
+    cells = [];
+    plants = [];
+    nutrients = [];
+    corpses = [];
+    cellIdCounter = 0;
+    selectedCell = null;
+    gameFrame = 0;
+    
+    ABILITY_SYSTEM.newAbilities = [];
+    ABILITY_SYSTEM.aiAbilities = [];
+    ABILITY_SYSTEM.honorAbilities = honorSystem.honorAbilities;
+    
+    gameStats = {
+      totalCellsBorn:0, totalCellsDied:0, totalReproductions:0,
+      totalConsumptions:0, totalMutations:0, totalLevelUps:0,
+      maxLifespan:0, highestLevel:0, species:new Set()
+    };
+    
+    eventLog.length = 0;
+    updateEventLogUI();
+    
+    // 创建植物
+    const pad = 80;
+    for(let i=0; i<CONFIG.PLANT_COUNT; i++){
+      plants.push(new Plant(pad+Math.random()*(W-pad*2), pad+Math.random()*(H-pad*2)));
+    }
+    
+    // 创建初始细胞
+    for(let i=0; i<Math.min(cellConfigs.length, CONFIG.INITIAL_CELLS); i++){
+      const cfg = cellConfigs[i];
+      for(let j=0; j<2; j++){ // 每个谱系创建2个细胞
+        const a = Math.PI*2/2 * j - Math.PI/2;
+        const sr = Math.min(W,H)*0.25;
+        const x = W/2 + Math.cos(a)*sr*(0.7+Math.random()*0.6);
+        const y = H/2 + Math.sin(a)*sr*(0.7+Math.random()*0.6);
+        cells.push(new Cell(cfg, x, y, null, 0));
+      }
+    }
+    
+    // 创建营养块
+    for(let i=0; i<CONFIG.NUTRIENT_COUNT; i++){
+      nutrients.push(spawnNutrient());
+    }
+    
+    // 更新UI
+    ABILITY_SYSTEM.dirty = true;
+    eventLogDirty = true;
+    updateUI();
+    updateSelectedInfo();
+    ABILITY_SYSTEM.updateUI();
+    
+    // 初始化后端连接
+    initBackend();
+    
+    // 隐藏设置面板，显示游戏UI
+    setupPanel.classList.add('hidden');
+    topControls.classList.remove('hidden');
+    panelToggleBtn.classList.remove('hidden');
+    rightPanel.classList.remove('hidden');
+    fpsDisplay.classList.remove('hidden');
+  }
+  
+  // 结束游戏并保存荣耀
+  function endGameAndSaveHonor(){
+    if(cells.length === 0) return;
+    
+    // 找到最强者
+    const strongest = cells.reduce((best, cell) => {
+      const score = cell.level * 100 + cell.attributes.attack + cell.attributes.defense;
+      const bestScore = best.level * 100 + best.attributes.attack + best.attributes.defense;
+      return score > bestScore ? cell : best;
+    });
+    
+    // 保存到荣耀殿堂
+    honorSystem.addToHallOfFame(strongest);
+    
+    // 显示结果
+    addEvent('🏆', `游戏结束！${strongest.name} (Lv${strongest.level}) 进入荣耀殿堂！`, 'honor');
+  }
+  
+  // 设置监听器
+  function setupListeners(){
+    // 待机页面
+    startIdleBtn.addEventListener('click', () => {
+      idleScreen.classList.add('hidden');
+      setupPanel.classList.remove('hidden');
+      createCellConfigurator();
+    });
+    
+    backToIdleBtn.addEventListener('click', () => {
+      setupPanel.classList.add('hidden');
+      idleScreen.classList.remove('hidden');
+    });
+    
+    // 设置滑块
+    initialCellsSlider.addEventListener('input', () => {
+      initialCellsValue.textContent = initialCellsSlider.value;
+      createCellConfigurator();
+    });
+    
+    maxPopulationSlider.addEventListener('input', () => {
+      maxPopulationValue.textContent = maxPopulationSlider.value;
+    });
+    
+    nutrientCountSlider.addEventListener('input', () => {
+      nutrientCountValue.textContent = nutrientCountSlider.value;
+    });
+    
+    plantCountSlider.addEventListener('input', () => {
+      plantCountValue.textContent = plantCountSlider.value;
+    });
+    
+    xpMultiplierSlider.addEventListener('input', () => {
+      xpMultiplierValue.textContent = xpMultiplierSlider.value + 'x';
+    });
+    
+    corpseDurationSlider.addEventListener('input', () => {
+      corpseDurationValue.textContent = corpseDurationSlider.value + '秒';
+    });
+    
+    friendlyFirePenaltySlider.addEventListener('input', () => {
+      friendlyFirePenaltyValue.textContent = friendlyFirePenaltySlider.value + '%';
+    });
+    
+    abilityInheritSlider.addEventListener('input', () => {
+      abilityInheritValue.textContent = abilityInheritSlider.value + '%';
+    });
+    
+    // 添加细胞按钮
+    addCellBtn.addEventListener('click', () => {
+      if(cellConfigs.length < 10){
+        addCellConfig(cellConfigs.length);
+      }
+    });
+    
+    // 开始游戏
+    startGameBtn.addEventListener('click', initGame);
+    
+    // 游戏控制
+    playBtn.addEventListener('click', () => {
+      gameRunning = true;
+      gamePaused = false;
+      playBtn.classList.add('active');
+      pauseBtn.classList.remove('active');
+      fpsLastTime = performance.now();
+      fpsFrameCount = 0;
+      lastTime = performance.now();
+      if(!frameId) frameId = requestAnimationFrame(gameLoop);
+    });
+    
+    pauseBtn.addEventListener('click', () => {
+      if(!gameRunning) return;
+      gamePaused = !gamePaused;
+      pauseBtn.classList.toggle('active', gamePaused);
+      if(!gamePaused){
+        fpsLastTime = performance.now();
+        fpsFrameCount = 0;
+        lastTime = performance.now();
+      }
+    });
+    
+    stepBtn.addEventListener('click', () => {
+      if(!gameRunning) return;
+      gamePaused = true;
+      pauseBtn.classList.add('active');
+      lastTime = performance.now();
+      gameLoop(performance.now()+16);
+    });
+    
+    panelToggleBtn.addEventListener('click', () => {
+      panelCollapsed = !panelCollapsed;
+      rightPanel.classList.toggle('collapsed', panelCollapsed);
+      panelToggleBtn.classList.toggle('collapsed', panelCollapsed);
+      panelToggleBtn.textContent = panelCollapsed ? '▶' : '◀';
+    });
+    
+    nameToggleBtn.addEventListener('click', () => {
+      showNames = !showNames;
+      nameToggleBtn.classList.toggle('active', showNames);
+    });
+    
+    gridToggleBtn.addEventListener('click', () => {
+      showGrid = !showGrid;
+      gridToggleBtn.classList.toggle('active', showGrid);
+    });
+    
+    rangeToggleBtn.addEventListener('click', () => {
+      showRange = !showRange;
+      rangeToggleBtn.classList.toggle('active', showRange);
+    });
+    
+    speedUpBtn.addEventListener('click', () => {
+      speedMultiplier = Math.min(5.0, speedMultiplier+0.15);
+      updateUI();
+    });
+    
+    speedDownBtn.addEventListener('click', () => {
+      speedMultiplier = Math.max(0.2, speedMultiplier-0.15);
+      updateUI();
+    });
+    
+    resetBtn.addEventListener('click', () => {
+      gameRunning = false;
+      gamePaused = false;
+      speedMultiplier = 1.0;
+      playBtn.classList.remove('active');
+      pauseBtn.classList.remove('active');
+      
+      // 结束游戏并保存荣耀
+      endGameAndSaveHonor();
+      
+      // 返回设置面板
+      topControls.classList.add('hidden');
+      panelToggleBtn.classList.add('hidden');
+      rightPanel.classList.add('hidden');
+      fpsDisplay.classList.add('hidden');
+      setupPanel.classList.remove('hidden');
+      
+      if(frameId){
+        cancelAnimationFrame(frameId);
+        frameId = null;
+      }
+    });
+    
+    // 画布点击选择细胞
+    canvas.addEventListener('click', e => {
+      const rect = canvas.getBoundingClientRect();
+      const sx = canvas.width / rect.width;
+      const sy = canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * sx / devicePixelRatio;
+      const y = (e.clientY - rect.top) * sy / devicePixelRatio;
+      
+      for(const c of cells){
+        if(Math.sqrt((x-c.x)**2 + (y-c.y)**2) < c.radius){
+          selectedCell = c;
+          updateSelectedInfo();
+          return;
+        }
+      }
+      selectedCell = null;
+      updateSelectedInfo();
+    });
+    
+    // 窗口调整
+    window.addEventListener('resize', () => {
+      resize();
+      for(const c of cells){
+        c.x = Math.min(c.x, W-c.radius);
+        c.y = Math.min(c.y, H-c.radius);
+      }
+    });
+    
+    // 键盘快捷键
+    window.addEventListener('keydown', e => {
+      if(e.code === 'Space'){
+        e.preventDefault();
+        if(gameRunning) pauseBtn.click();
+        else playBtn.click();
+      }else if(e.code === 'Equal'){
+        e.preventDefault();
+        speedUpBtn.click();
+      }else if(e.code === 'Minus'){
+        e.preventDefault();
+        speedDownBtn.click();
+      }else if(e.code === 'KeyN'){
+        e.preventDefault();
+        nameToggleBtn.click();
+      }else if(e.code === 'KeyG'){
+        e.preventDefault();
+        gridToggleBtn.click();
+      }else if(e.code === 'KeyR'){
+        e.preventDefault();
+        rangeToggleBtn.click();
+      }else if(e.code === 'KeyX'){
+        e.preventDefault();
+        resetBtn.click();
+      }
+    });
+    
+    // 标签页切换
+    tabs.forEach(tb => {
+      tb.addEventListener('click', () => {
+        const tid = tb.dataset.tab;
+        tabs.forEach(t => t.classList.remove('active'));
+        tb.classList.add('active');
+        tabContents.forEach(c => c.classList.remove('active'));
+        document.getElementById(tid+'Tab').classList.add('active');
+      });
+    });
+  }
+  
+  // 初始化
+  function init(){
+    honorSystem.load();
+    setupListeners();
+    ABILITY_SYSTEM.updateUI();
+    honorSystem.updateUI();
+    createCellConfigurator();
+  }
+  
+  init();
+})();
+</script>
+</body>
+</html>
